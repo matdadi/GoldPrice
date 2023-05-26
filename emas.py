@@ -34,16 +34,22 @@ class HargaEmas:
         return result
     
     def avgMonth(jsonData):
-        result = []
+        mean, median, maxi, mini = [], [], [], []
         for month in range(12):
             data = list(filter(lambda x: int(x[0].split('/')[1]) == month+1, jsonData))
             temp = [int(x) for x in np.array(data)[:,1]]
-            result.append({month+1: round(np.average(temp))})
-        return result
+            mean.append({month+1: round(np.average(temp))})
+            median.append({month+1: round(np.median(temp))})
+            maxi.append({month+1: round(np.max(temp))})
+            mini.append({month+1: round(np.min(temp))})
+        return mean, median, maxi, mini
 
 if __name__ == '__main__':
     data = HargaEmas.readData()
     cleanData = HargaEmas.dateFormat(data)
     data2022 = HargaEmas.dataByFilter(cleanData)
-    rataRata2022 = HargaEmas.avgMonth(data2022)
-    print(rataRata2022)
+    mean2022, median2022, max2022, min2022 = HargaEmas.avgMonth(data2022)
+    print(f'''rata-rata: {mean2022}
+nilai tengah: {median2022}
+nilai tertinggi: {max2022}
+nilai terendah: {min2022}''')
