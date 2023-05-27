@@ -2,6 +2,8 @@ import numpy as np
 import json
 import os
 from datetime import datetime as dt
+import pandas as pd
+from functools import reduce
 
 class HargaEmas:
 
@@ -29,27 +31,40 @@ class HargaEmas:
                 jsonData[index][0] = jsonData[index][0].strftime('%d/%m/%Y')
         return jsonData
 
-    def dataByFilter(jsonData):
-        result = list(filter(lambda x: int(x[0].split('/')[2]) == HargaEmas.year, jsonData))
+    def dataByYear(jsonData):
+        result = list(filter(lambda x: int(x[0].year) == HargaEmas.year, jsonData))
         return result
     
-    def avgMonth(jsonData):
-        mean, median, maxi, mini = [], [], [], []
+    def dataPerMonth(jsonData):
+        mean, median, maxi, mini, result = [], [], [], [], {}
         for month in range(12):
-            data = list(filter(lambda x: int(x[0].split('/')[1]) == month+1, jsonData))
+            data = np.array(list(filter(lambda x: int(x[0].month) == month+1, jsonData)))            
+            count = 0
+            temp = np.array([[(HargaEmas.year,month+1,x), 0] for x in range(1,32)])
+            for array in data:
+                while array[0].day>temp[count,0][2]:
+                    count+=1
+                while array[0].day<temp[count,0][2]:
+                    break
+                if array[0].day==temp[count,0][2]:
+                    temp[count,1] = array[1]
+                    count+=1
+                    continue
+                
+            result.update({str(month+1): temp[:,1]})
+
             temp = [int(x) for x in np.array(data)[:,1]]
             mean.append({month+1: round(np.average(temp))})
             median.append({month+1: round(np.median(temp))})
             maxi.append({month+1: round(np.max(temp))})
             mini.append({month+1: round(np.min(temp))})
-        return mean, median, maxi, mini
+
+        return mean, median, maxi, mini, result
 
 if __name__ == '__main__':
     data = HargaEmas.readData()
-    cleanData = HargaEmas.dateFormat(data)
-    data2022 = HargaEmas.dataByFilter(cleanData)
-    mean2022, median2022, max2022, min2022 = HargaEmas.avgMonth(data2022)
-    print(f'''rata-rata: {mean2022}
-nilai tengah: {median2022}
-nilai tertinggi: {max2022}
-nilai terendah: {min2022}''')
+    cleanData = HargaEmas.dateFormat(data, toString=False)
+    data2022 = HargaEmas.dataByYear(cleanData)
+    mean2022, median2022, max2022, min2022, cleanData = HargaEmas.dataPerMonth(data2022)
+    cleanData = pd.DataFrame(cleanData)
+    print(cleanData)
